@@ -24,6 +24,6 @@ day_change = {2020-02-29 = "FR", 2020-03-19 = "SA", 2020-03-31 = "MO"}
 
 [COURSES]
 tt_file = 'path/to/Timetable II Sem 2019-20.xlsx'  # path to excel/json file of timetable. Use single quotes
-midsem_file = 'path/to/midsem Timetable II Sem 2019-20.xlsx'  # skip if you already have the JSON file.
+midsem_file = 'path/to/midsem Timetable II Sem 2019-20.xlsx'  # Useless for Chronofactorem
 overrides = {}
 # overrides = {"IS F341" = {"L2" = "L1", "P4" = "P2"}}  # LHS is old, RHS is new section. Other courses will be processed without any changes.

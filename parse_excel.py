@@ -17,21 +17,27 @@ def iter_rows(wb, column_map):
 
 
 def parse_main_tt(file_path: Path):
-    COLUMNS = {  # 0 indexed column indices
+    COLUMNS = {  # 0 indexed column indices, The indices need to be changed every according to the excel
         "c_num": 1,
         "c_title": 2,
         "sec_num": 6,
         "instr_name": 7,
-        "days": 8,
-        "hours": 9,
-        "midsem": 10,
-        "compre": 11,
+        "room":8,	
+        "days": 9,
+        "hours": 11,
+        "midsem": 12,
+        "compre": 13,
     }
     workbook = load_workbook(file_path, read_only=True)
     course_db = {}
     for data in iter_rows(workbook, COLUMNS):
         if not data["instr_name"]:
             continue  # blank row
+        if data["c_num" ]=="COURSE NO":
+            continue
+        if data["sec_num" ]=="S E C":
+            continue           
+            
         # new Course
         if data["c_num"]:
             course = {
@@ -39,11 +45,17 @@ def parse_main_tt(file_path: Path):
                 "sections": {},
             }
             if data["compre"]:
-                date, sess = data["compre"].split()
+                date, sess = str(data["compre"]).split()
                 course["compre"] = {"date": date, "session": sess}
-            if data["midsem"]:
-                date, time = data["midsem"].split("\n")
-                course["midsem"] = {"date": date.strip(), "time": time.strip()}
+  
+            if data["midsem"]:  
+            	if data["midsem"]=="TBA":
+            	   course["midsem"]={"date": "TBA", "time": "TBA"}
+            	else:  
+                   date,start_time,end_time = data["midsem"].split()
+                   course["midsem"] = {"date": str(date.strip()), "time": start_time+'-'+end_time[2:]}  
+    
+           
             course_db[data["c_num"]] = course  # add to course
             sec_type = "L"
             sec_num_counter = 1
@@ -76,7 +88,7 @@ def parse_main_tt(file_path: Path):
                 else:
                     hours.append(hour)
             days = data["days"].split()
-            sched = {"room": data.get("room", ""), "days": days}
+            sched = {"room": data.get("room", "NA"), "days": days}
             if len(hours) == hours[-1] - hours[0] + 1:  # continuous hours
                 section["sched"].append(dict(**sched, hours=hours))
             else:
@@ -88,29 +100,8 @@ def parse_main_tt(file_path: Path):
     return course_db
 
 
-def parse_midsem(file_path: Path):
-    COLUMNS = {"c_num": 1, "c_title": 2, "date": 3, "time": 4}
-    workbook = load_workbook(file_path, read_only=True)
-    midsem = {}
-    for row in iter_rows(workbook, COLUMNS):
-        if "*" in row["time"]:
-            continue
-        c_dept, c_num = row["c_num"].strip().split()
-        midsem[c_dept.strip() + " " + c_num.strip()] = {
-            "date": row["date"].strip(),
-            "time": row["time"].strip(),
-        }
-    return midsem
-
-
 def parse_files(tt_file: Path, midsem_file: Path):
     timetable = parse_main_tt(tt_file)
-    if midsem_file.is_file():
-        midsem = parse_midsem(midsem_file)
-        for k, v in midsem.items():
-            timetable[k]["midsem"] = v
-    else:
-        print(f"File '{midsem_file}' not found. Midsem details will not be added.")
     return timetable
 
 
