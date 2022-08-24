@@ -22,7 +22,7 @@ def parse_main_tt(file_path: Path):
         "c_title": 2,
         "sec_num": 6,
         "instr_name": 7,
-        "room":8,	
+        "room": 8,
         "days": 9,
         "hours": 11,
         "midsem": 12,
@@ -33,11 +33,11 @@ def parse_main_tt(file_path: Path):
     for data in iter_rows(workbook, COLUMNS):
         if not data["instr_name"]:
             continue  # blank row
-        if data["c_num" ]=="COURSE NO":
+        if data["c_num"] == "COURSE NO":
             continue
-        if data["sec_num" ]=="S E C":
-            continue           
-            
+        if data["sec_num"] == "S E C":
+            continue
+
         # new Course
         if data["c_num"]:
             course = {
@@ -47,15 +47,30 @@ def parse_main_tt(file_path: Path):
             if data["compre"]:
                 date, sess = str(data["compre"]).split()
                 course["compre"] = {"date": date, "session": sess}
-  
-            if data["midsem"]:  
-            	if data["midsem"]=="TBA":
-            	   course["midsem"]={"date": "TBA", "time": "TBA"}
-            	else:  
-                   date,start_time,end_time = data["midsem"].split()
-                   course["midsem"] = {"date": str(date.strip()), "time": start_time+'-'+end_time[2:]}  
-    
-           
+
+            if data["midsem"]:
+                if data["midsem"] == "TBA":
+                    course["midsem"] = {"date": "TBA", "time": "TBA"}
+                else:
+                    try:
+                        date, start_time, end_time = data["midsem"].split()
+                        # print("correct:", data["midsem"].split())
+                        course["midsem"] = {
+                            "date": str(date.strip()),
+                            "time": start_time + "-" + end_time,
+                        }
+                    except:
+                        if "-" in data["midsem"]:
+                            data["midsem"] = data["midsem"].replace("-", "")
+                            # print("edited:", data["midsem"].split())
+                            date, start_time, end_time = data["midsem"].split()
+                            course["midsem"] = {
+                                "date": str(date.strip()),
+                                "time": start_time + "-" + end_time,
+                            }
+                        else:
+                            print("Error still not fixed...")
+
             course_db[data["c_num"]] = course  # add to course
             sec_type = "L"
             sec_num_counter = 1
@@ -120,7 +135,7 @@ class CourseDB:
         if not self.tt_file.exists():
             raise FileNotFoundError(self.tt_file)
         json_file = self.tt_file.with_suffix(".json")
-        if not json_file.exists() or (force_parse and self.tt_file.suffix != '.json'):
+        if not json_file.exists() or (force_parse and self.tt_file.suffix != ".json"):
             self._timetable = parse_files(self.tt_file, self.midsem_file)
             write_json(json_file, self._timetable)
         else:
